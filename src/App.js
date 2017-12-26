@@ -16,16 +16,33 @@ class BooksApp extends Component {
     )
   }
 
+  moveBookToShelf = (book, shelf) => {
+    const { books } = this.state
+    const bookId = book.id
+    let updatedBooks = books.filter((book) => book.id !== bookId)
+    let updatedBook = book
+    updatedBook.shelf = shelf
+    updatedBooks.push(updatedBook)
+    this.setState({
+      books: updatedBooks
+    })
+    BooksAPI.update(book, shelf)
+  }
+
   render() {
     const { books } = this.state
     return (
       <div className='app'>
-        <Route path='/search' render={() => (
-            <Search />
+        <Route
+          path='/search'
+          render={() => (
+            <Search moveBookToShelf={this.moveBookToShelf} />
           )}
         />
-        <Route exact path='/' render={() => (
-            <Main books={books} />
+        <Route
+          exact path='/'
+          render={() => (
+            <Main books={books} moveBookToShelf={this.moveBookToShelf} />
           )}
         />
       </div>
