@@ -1,12 +1,14 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom'
 import PropTypes from 'prop-types'
+import { Debounce } from 'react-throttle'
 import * as BooksAPI from './BooksAPI'
 import Books from './Books'
 
 class Search extends Component {
   static propTypes = {
-    moveBookToShelf: PropTypes.func.isRequired
+    moveBookToShelf: PropTypes.func.isRequired,
+    books: PropTypes.array.isRequired
   }
 
   state = {
@@ -15,50 +17,51 @@ class Search extends Component {
   }
 
   updateQuery = (query) => {
-    const allowedQueries = [
-      'Android', 'Art', 'Artificial Intelligence', 'Astronomy', 'Austen',
-      'Baseball', 'Basketball', 'Bhagat', 'Biography', 'Brief', 'Business',
-      'Camus', 'Cervantes', 'Christie', 'Classics', 'Comics', 'Cook', 'Cricket',
-      'Cycling', 'Desai', 'Design', 'Development', 'Digital Marketing', 'Drama',
-      'Drawing', 'Dumas', 'Education', 'Everything', 'Fantasy', 'Film', 'Finance',
-      'First', 'Fitness', 'Football', 'Future', 'Games', 'Gandhi', 'Homer', 'Horror',
-      'Hugo', 'Ibsen', 'Journey', 'Kafka', 'King', 'Lahiri', 'Larsson', 'Learn',
-      'Literary Fiction', 'Make', 'Manage', 'Marquez', 'Money', 'Mystery', 'Negotiate',
-      'Painting', 'Philosophy', 'Photography', 'Poetry', 'Production', 'Programming',
-      'React', 'Redux', 'River', 'Robotics', 'Rowling', 'Satire', 'Science Fiction',
-      'Shakespeare', 'Singh', 'Swimming', 'Tale', 'Thrun', 'Time', 'Tolstoy', 'Travel',
-      'Ultimate', 'Virtual Reality', 'Web Development', 'iOS'
-    ]
-    const updatedQuery = query.trim()
-    if (allowedQueries.includes(query)) {
-      BooksAPI.search(query).then((books) => {
-        this.setState({
-          query: updatedQuery,
-          searchResults: books
-        })
+    if (!query) {
+      this.setState({
+        query: '',
+        searchResults: []
       })
     } else {
-      this.setState({
-        query: updatedQuery,
-        searchResults: []
+      BooksAPI.search(query).then((books) => {
+        if (books.error) {
+          this.setState({
+            query,
+            searchResults: []
+          })
+        } else {
+          books.forEach((book) => {
+            const userBook = this.props.books.find((bk) => bk.id === book.id)
+            if (userBook) {
+              book.shelf = userBook.shelf
+            } else {
+              book.shelf = 'none'
+            }
+          })
+          this.setState({
+            query,
+            searchResults: books
+          })
+        }
       })
     }
   }
 
   render() {
     const { moveBookToShelf } = this.props
-    const { query, searchResults } = this.state
+    const { searchResults } = this.state
     return (
       <div className='search-books'>
         <div className='search-books-bar'>
           <Link className='close-search' to='/'>Close</Link>
           <div className='search-books-input-wrapper'>
-            <input
-              type="text"
-              placeholder="Search by title or author"
-              value={query}
-              onChange={(event) => this.updateQuery(event.target.value)}
-            />
+            <Debounce time='400' handler='onChange'>
+              <input
+                type="text"
+                placeholder="Search by title or author"
+                onChange={(event) => this.updateQuery(event.target.value)}
+              />
+            </Debounce>
           </div>
         </div>
         <div className="search-books-results">
