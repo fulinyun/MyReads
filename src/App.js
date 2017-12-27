@@ -11,22 +11,24 @@ class BooksApp extends Component {
   }
 
   componentDidMount() {
-    BooksAPI.getAll().then((books) =>
+    BooksAPI.getAll().then((books) => {
       this.setState({ books })
-    )
+    })
   }
 
-  moveBookToShelf = (book, shelf) => {
-    const { books } = this.state
-    const bookId = book.id
-    let updatedBooks = books.filter((book) => book.id !== bookId)
-    let updatedBook = book
-    updatedBook.shelf = shelf
-    updatedBooks.push(updatedBook)
-    this.setState({
-      books: updatedBooks
+  moveBookToShelf = (book, targetShelf) => {
+    BooksAPI.update(book, targetShelf).then(() => {
+      const { books } = this.state
+      const bookId = book.id
+      books.forEach((book) => {
+        if (book.id === bookId) {
+          book.shelf = targetShelf
+        }
+      })
+      this.setState({
+        books
+      })
     })
-    BooksAPI.update(book, shelf)
   }
 
   render() {
